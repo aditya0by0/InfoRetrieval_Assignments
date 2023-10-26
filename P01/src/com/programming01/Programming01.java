@@ -26,7 +26,7 @@ public class Programming01 {
 		System.out.println("------------------- Task P01 - a   -------------------");
 		tokenizerTaskA();
 
-		// Call to the Analyser - As per Programming Assignment 1 - sub-question 'c'
+		// Call to the Analyser - As per Programming Assignment 1 - sub-question 'b'
 		System.out.println("------------------- Task P01 - b   -------------------");
 		stopWord(); // call stopWord Function
 		
@@ -95,17 +95,20 @@ public class Programming01 {
         Analyzer standardAnalyzer = new StandardAnalyzer();
 
         System.out.println("Tokens generated using whitespace tokenizer:");
+        // White Space Analyzer with implicit WhitespaceTokeniser
         whitespaceanalyzer(whitespaceAnalyzer, TEXT);
         System.out.println("\nTokens generated using standard tokenizer:");
+        // Standard Analyzer with implicit StandardTokeniser
         standardanalyzer(standardAnalyzer, TEXT);
     }
 
 	private static void stopWord() {
 	try {
-		System.out.println("Stopword eliminator");
+		System.out.println("Stopword eliminator with standard tokenizing");
 		List<String> stopWords=Arrays.asList("was", "is", "in", "to", "be");
 		CharArraySet stopSet=new CharArraySet(stopWords, true);
-		Analyzer analyzer= new StandardAnalyzer(stopSet);
+		// Std Analyser with implicit std tokenizer
+		Analyzer analyzer= new StandardAnalyzer(stopSet); 
 		List<String> result = new ArrayList<String>();
 		TokenStream stream  = analyzer.tokenStream("",TEXT);
 		stream.reset();
