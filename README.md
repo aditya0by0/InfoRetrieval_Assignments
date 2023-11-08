@@ -1,2 +1,1 @@
-# InfoRetrieval_Projects
-Project for Information Retrieval course
+# Information Retrieval Programming Assignments
