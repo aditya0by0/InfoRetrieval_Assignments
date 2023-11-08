@@ -1,101 +1,231 @@
 package com.P02;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
+import org.apache.lucene.analysis.custom.CustomAnalyzer;
+import org.apache.lucene.analysis.standard.StandardTokenizerFactory;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.FieldType;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.IndexableField;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.RAMDirectory;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.BytesRef;
 
 public class P02 {
-    
-    public static void main(String[] args) throws Exception {
-        Directory directory = indexDocument();
-        if (directory != null) {
-        	printIndexedDocuments(directory);
-        	System.out.println("------****--------------------");
-        	findDocument(directory);
-        }
-    }
 
-    public static Directory indexDocument() throws Exception {
-        String[] documents = {
-            "Today is sunny.",
-            "She is a sunny girl.",
-            "To be or not to be.",
-            "She is in Berlin today.",
-            "Sunny Berlin!",
-            "Berlin is always exciting!"
-        };
+	public static void main(String args[]) throws IOException, ParseException {
 
-        Directory directory = new RAMDirectory();
-        Analyzer analyzer = new StandardAnalyzer();
-        IndexWriterConfig config = new IndexWriterConfig(analyzer);
-        IndexWriter indexWriter = new IndexWriter(directory, config);
+		Path indexPath = FileSystems.getDefault().getPath("resources/index");
+		File dataDir = new File("resources/data");
 
-        for (int i = 0; i < documents.length; i++) {
-            Document doc = new Document();
-            String[] words = documents[i].split("[^a-zA-Z]+");
-            
-            for (String word:words) {
-            	System.out.println(word);
-            }
+		Analyzer analyzer = CustomAnalyzer.builder(Paths.get("src/com/P02/"))
+				.withTokenizer(StandardTokenizerFactory.class).addTokenFilter(LowerCaseFilterFactory.class).build();
 
-            for (String word : words) {
-                Field textField = new TextField("content", word.toLowerCase(), Field.Store.YES);
-                doc.add(textField);
-            }
+		Directory directory = FSDirectory.open(indexPath);
+		//Do indexing of documents
+		executeindexing(directory, analyzer, dataDir);
+		//Search setup
+		Set<String> tokens = new HashSet<String>();
+		DirectoryReader ireader = DirectoryReader.open(directory);
+		IndexSearcher isearcher = new IndexSearcher(ireader);
+		QueryParser parser = new QueryParser("contents", analyzer);
+		tokens = getAllTokens(ireader);
+		//Print posting list for each token
+		printPostingList(tokens, parser, ireader, isearcher);
+		System.out.println();
+		System.out.println("For query: sunny AND to =");
+		String query = "sunny to";
+		termIntersection(query, parser, ireader, isearcher);
+		ireader.close();
+		directory.close();
+	}
 
-            indexWriter.addDocument(doc);
-        }
+	private static void termIntersection(String word, QueryParser parser, DirectoryReader ireader, IndexSearcher isearcher) throws ParseException, IOException {
 
-        indexWriter.close();
-        return directory;
-    }
+		parser.setDefaultOperator(QueryParser.Operator.AND);
+		Query query = parser.parse(word);
+		//Iterate over words from here
+		TopDocs topDocss = isearcher.search(query, 1000);
+		ScoreDoc[] hits = topDocss.scoreDocs;
+		System.out.println(hits.length+" documents have both tokens" );
+		List<String> wordss = Arrays.asList(word.split(" "));
 
-    public static void findDocument(Directory directory) throws Exception {
-        IndexReader indexReader = DirectoryReader.open(directory);
-        IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+		for (int i = 0; i < hits.length; i++) {
+			int docId = hits[i].doc;
+			Terms terms = ireader.getTermVector(docId, "contents");
+			TermsEnum te = terms.iterator();
+			System.out.print("[" + docId);
+			PostingsEnum docsAndPosEnum = null;
+			BytesRef bytesRef;
 
-        TermQuery querySunny = new TermQuery(new Term("content", "sunny"));
-        TermQuery queryExciting = new TermQuery(new Term("content", "exciting"));
+			while ((bytesRef = te.next()) != null) {
+				docsAndPosEnum = te.postings(docsAndPosEnum, PostingsEnum.ALL);
+				//For each term (iterator next) in this field (field)
+				//Iterate over the docs (should only be one)
+				int nextDoc = docsAndPosEnum.nextDoc();
+				assert nextDoc != DocIdSetIterator.NO_MORE_DOCS;
+				final int fr = docsAndPosEnum.freq();
+				final int p = docsAndPosEnum.nextPosition();
+				final int o = docsAndPosEnum.startOffset();
+				String curWord = bytesRef.utf8ToString();
 
-        BooleanQuery.Builder builder = new BooleanQuery.Builder();
-        builder.add(querySunny, BooleanClause.Occur.SHOULD);
-        builder.add(queryExciting, BooleanClause.Occur.SHOULD);
+				if (wordss.contains(curWord)) {
+					System.out.print(":" + fr);
 
-        BooleanQuery query = builder.build();
+					if (fr == 1) {
+						System.out.print(":[" + o + "]]");
+					}
+					else if (fr > 1) {
+						System.out.print(":[" + o);
 
-        System.out.println("Documents containing 'sunny' or 'exciting':");
-        for (int i = 0; i < indexReader.maxDoc(); i++) {
-            Document document = indexSearcher.doc(i);
-            if (document != null && document.getField("content") != null) {
-                System.out.println("Document " + i + ": " + document.getField("content").stringValue());
-            }
-        }
-    }
-    
-    public static void printIndexedDocuments(Directory directory) throws Exception {
-        IndexReader indexReader = DirectoryReader.open(directory);
+                        for (int k = 0; k < fr - 1; k++) {
+                            int np = docsAndPosEnum.nextPosition();
+                            int offstart = docsAndPosEnum.startOffset();
+                            System.out.print("," + offstart);
+                        }
 
-        for (int i = 0; i < indexReader.maxDoc(); i++) {
-            Document document = indexReader.document(i);
-            System.out.println("Document " + i + " Fields:");
-            for (IndexableField field : document.getFields()) {
-                System.out.println(field.name() + ": " + document.get(field.name()));
-            }
-            System.out.println("-------------------");
-        }
-    }
+                        System.out.print("]]");
+					}
+				}
+			}
+
+			if (i != hits.length - 1)
+				System.out.print("->");
+		}
+	}
+
+	private static void printPostingList(Set<String> tokens, QueryParser parser, DirectoryReader ireader, IndexSearcher isearcher) throws ParseException, IOException {
+
+		for (String word : tokens) {
+			Query query = parser.parse(word);
+			TopDocs topDocs = isearcher.search(query, 1000);
+			ScoreDoc[] hits = topDocs.scoreDocs;
+			Term term = new Term("contents", word);
+			System.out.print("[" + word + ":");
+			System.out.print(ireader.totalTermFreq(term));
+			System.out.print(":" + ireader.docFreq(term) + "]-->");
+
+			for (int i = 0; i < hits.length; i++) {
+				int docId = hits[i].doc;
+				Terms terms = ireader.getTermVector(docId, "contents");
+				TermsEnum te = terms.iterator();
+				System.out.print("[" + docId);
+
+				PostingsEnum docsAndPosEnum = null;
+				BytesRef bytesRef;
+
+				while ((bytesRef = te.next()) != null) {
+					docsAndPosEnum = te.postings(docsAndPosEnum, PostingsEnum.ALL);
+					//For each term (iterator next) in this field (field)
+					//Iterate over the docs (should only be one)
+					int nextDoc = docsAndPosEnum.nextDoc();
+					assert nextDoc != DocIdSetIterator.NO_MORE_DOCS;
+					final int fr = docsAndPosEnum.freq();
+					final int p = docsAndPosEnum.nextPosition();
+					final int o = docsAndPosEnum.startOffset();
+                    //System.out.println("p="+ p + ", o=" + o + ", l=" + bytesRef.length + ", f=" + fr + ", s=" + bytesRef.utf8ToString());
+					String curWord = bytesRef.utf8ToString();
+
+					if (curWord.equals(word)) {
+						System.out.print(":" + fr);
+
+						if (fr == 1)
+							System.out.print(":[" + o + "]]");
+						else if (fr > 1) {
+							System.out.print(":[" + o);
+
+							for (int k = 0; k < fr - 1; k++) {
+								int np = docsAndPosEnum.nextPosition();
+								int offstart = docsAndPosEnum.startOffset();
+								System.out.print("," + offstart);
+							}
+
+							System.out.print("]]");
+						}
+					}
+				}
+
+				if (i != hits.length - 1)
+					System.out.print("->");
+			}
+
+			System.out.println();
+		}
+	}
+
+	private static Set<String> getAllTokens(DirectoryReader ireader) throws IOException {
+
+		Set<String> tokens = new HashSet<String>();
+		int numDocs = ireader.numDocs();
+
+		for (int i = 0; i < numDocs; i++) {
+			Terms vector = ireader.getTermVector(i, "contents");
+			TermsEnum trms = vector.iterator();
+			BytesRef ter;
+			
+            while ((ter = trms.next()) != null) {
+				String termstr = ter.utf8ToString();
+				tokens.add(termstr);
+			}
+		}
+
+		return tokens;
+	}
+
+	private static void executeindexing(Directory directory, Analyzer analyzer, File dataDir) throws IOException {
+
+		IndexWriterConfig config = new IndexWriterConfig(analyzer);
+		config.setOpenMode(OpenMode.CREATE);
+		IndexWriter iwriter = new IndexWriter(directory, config);
+		FieldType fieldType = new FieldType();
+		fieldType.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
+		fieldType.setStored(true);
+        //Default = false (same as Field.Store.NO)
+		fieldType.setTokenized(true);
+        //Default = true (tokenize the content)
+		fieldType.setStoreTermVectorOffsets(true);
+		fieldType.setStoreTermVectorPayloads(true);
+		fieldType.setStoreTermVectorPositions(true);
+		fieldType.setStoreTermVectors(true);
+		File[] files = dataDir.listFiles();
+
+		for (int i = 0; i < files.length; i++) {
+			File f = files[i];
+			Document doc = new Document();
+            //doc.add(new TextField("contents", new FileReader(f)));
+			String text = FileUtils.readFileToString(f);
+            //System.out.println(text);
+			doc.add(new Field("contents", text, fieldType));
+			iwriter.addDocument(doc);
+		}
+
+		iwriter.close();
+	}
 }
