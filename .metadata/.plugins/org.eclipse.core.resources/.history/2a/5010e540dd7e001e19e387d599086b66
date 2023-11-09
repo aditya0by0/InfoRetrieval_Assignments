@@ -49,35 +49,21 @@ public class P02 {
 				.withTokenizer(StandardTokenizerFactory.class).addTokenFilter(LowerCaseFilterFactory.class).build();
 
 		Directory directory = FSDirectory.open(indexPath);
-		
-		//Document indexing:
+		//Do indexing of documents
 		indexing(directory, analyzer, dataDir);
-		
-		//Search setup:
+		//Search setup
 		Set<String> tokens = new HashSet<String>();
 		DirectoryReader ireader = DirectoryReader.open(directory);
 		IndexSearcher isearcher = new IndexSearcher(ireader);
 		QueryParser parser = new QueryParser("contents", analyzer);
 		tokens = getTokens(ireader);
-		//System.out.println(tokens);
-		
+		//Print posting list for each token
 		System.out.println("Documents that contain 'sunny' and 'exciting':");
 		String query = "sunny exciting";
 		termIntersection(query, parser, ireader, isearcher);
 		System.out.println();
-
-		//Posting list for each token:
-		//System.out.println("Postings List:");
-		//postingList(tokens, parser, ireader, isearcher);
-
-		//Posting list for 'sunny' and 'to':
-        Set<String> postingTokens = new HashSet<>();
-        postingTokens.add("sunny");
-        postingTokens.add("to");
-        
-		System.out.println("Postings list for 'sunny' and 'to':");
-		postingList(postingTokens, parser, ireader, isearcher);
-		
+		System.out.println("Postings List:");
+		postingList(tokens, parser, ireader, isearcher);
 		ireader.close();
 		directory.close();
 	}
@@ -109,9 +95,9 @@ public class P02 {
 		FieldType fieldType = new FieldType();
 		fieldType.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
 		fieldType.setStored(true);
-        //Default = false (Same as Field.Store.NO)
+        //Default = false (same as Field.Store.NO)
 		fieldType.setTokenized(true);
-        //Default = true (Tokenize the content)
+        //Default = true (tokenize the content)
 		fieldType.setStoreTermVectorOffsets(true);
 		fieldType.setStoreTermVectorPayloads(true);
 		fieldType.setStoreTermVectorPositions(true);
@@ -147,13 +133,14 @@ public class P02 {
 				Terms terms = ireader.getTermVector(docId, "contents");
 				TermsEnum te = terms.iterator();
 				System.out.print("[" + docId);
+
 				PostingsEnum docsAndPosEnum = null;
 				BytesRef bytesRef;
 
 				while ((bytesRef = te.next()) != null) {
 					docsAndPosEnum = te.postings(docsAndPosEnum, PostingsEnum.ALL);
 					//For each term (iterator next) in this field (field)
-					//Iterate over the documents (should only be one)
+					//Iterate over the docs (should only be one)
 					int nextDoc = docsAndPosEnum.nextDoc();
 					assert nextDoc != DocIdSetIterator.NO_MORE_DOCS;
 					final int fr = docsAndPosEnum.freq();

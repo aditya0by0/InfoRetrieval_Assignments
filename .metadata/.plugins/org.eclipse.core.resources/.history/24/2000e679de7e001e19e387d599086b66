@@ -49,35 +49,23 @@ public class P02 {
 				.withTokenizer(StandardTokenizerFactory.class).addTokenFilter(LowerCaseFilterFactory.class).build();
 
 		Directory directory = FSDirectory.open(indexPath);
-		
-		//Document indexing:
+		//Document indexing
 		indexing(directory, analyzer, dataDir);
-		
-		//Search setup:
+		//Search setup
 		Set<String> tokens = new HashSet<String>();
 		DirectoryReader ireader = DirectoryReader.open(directory);
 		IndexSearcher isearcher = new IndexSearcher(ireader);
 		QueryParser parser = new QueryParser("contents", analyzer);
 		tokens = getTokens(ireader);
-		//System.out.println(tokens);
 		
 		System.out.println("Documents that contain 'sunny' and 'exciting':");
 		String query = "sunny exciting";
 		termIntersection(query, parser, ireader, isearcher);
 		System.out.println();
 
-		//Posting list for each token:
-		//System.out.println("Postings List:");
-		//postingList(tokens, parser, ireader, isearcher);
-
-		//Posting list for 'sunny' and 'to':
-        Set<String> postingTokens = new HashSet<>();
-        postingTokens.add("sunny");
-        postingTokens.add("to");
-        
-		System.out.println("Postings list for 'sunny' and 'to':");
-		postingList(postingTokens, parser, ireader, isearcher);
-		
+		//Posting list for each token
+		System.out.println("Postings List:");
+		postingList(tokens, parser, ireader, isearcher);
 		ireader.close();
 		directory.close();
 	}
@@ -147,6 +135,7 @@ public class P02 {
 				Terms terms = ireader.getTermVector(docId, "contents");
 				TermsEnum te = terms.iterator();
 				System.out.print("[" + docId);
+
 				PostingsEnum docsAndPosEnum = null;
 				BytesRef bytesRef;
 

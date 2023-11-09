@@ -59,7 +59,7 @@ public class P02 {
 		IndexSearcher isearcher = new IndexSearcher(ireader);
 		QueryParser parser = new QueryParser("contents", analyzer);
 		tokens = getTokens(ireader);
-		//System.out.println(tokens);
+		System.out.println(tokens);
 		
 		System.out.println("Documents that contain 'sunny' and 'exciting':");
 		String query = "sunny exciting";
@@ -67,15 +67,12 @@ public class P02 {
 		System.out.println();
 
 		//Posting list for each token:
-		//System.out.println("Postings List:");
-		//postingList(tokens, parser, ireader, isearcher);
+		System.out.println("Postings List:");
+		postingList(tokens, parser, ireader, isearcher);
 
 		//Posting list for 'sunny' and 'to':
-        Set<String> postingTokens = new HashSet<>();
-        postingTokens.add("sunny");
-        postingTokens.add("to");
-        
-		System.out.println("Postings list for 'sunny' and 'to':");
+		String[] postingTokens = {"sunny", "to"};
+		System.out.println("Postings list for sunny and to:");
 		postingList(postingTokens, parser, ireader, isearcher);
 		
 		ireader.close();
