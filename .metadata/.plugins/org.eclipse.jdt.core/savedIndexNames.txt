@@ -2,13 +2,13 @@ INDEX VERSION 1.131+D:\OvGU\IR\InfoRetrieval_Projects\.metadata\.plugins\org.ecl
 2653330038.index
 2256529200.index
 3566089501.index
-1737575566.index
 826114973.index
-4278764599.index
+1737575566.index
 2782998763.index
-3355708150.index
-2410557795.index
+4278764599.index
 2407134105.index
+2410557795.index
+3355708150.index
 1552878334.index
 2071462652.index
 585472926.index
@@ -19,6 +19,7 @@ INDEX VERSION 1.131+D:\OvGU\IR\InfoRetrieval_Projects\.metadata\.plugins\org.ecl
 1010441376.index
 1227306570.index
 1119582079.index
+401767567.index
 3312165055.index
 2758576337.index
 4149474178.index
