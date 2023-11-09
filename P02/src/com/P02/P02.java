@@ -75,7 +75,7 @@ public class P02 {
         postingTokens.add("sunny");
         postingTokens.add("to");
         
-		System.out.println("Postings list for 'sunny' and 'to':");
+		System.out.println("Postings list for 'sunny', 'to':");
 		postingList(postingTokens, parser, ireader, isearcher);
 		
 		ireader.close();
