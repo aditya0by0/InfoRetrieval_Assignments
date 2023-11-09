@@ -58,12 +58,11 @@ public class P02 {
 		QueryParser parser = new QueryParser("contents", analyzer);
 		tokens = getTokens(ireader);
 		//Print posting list for each token
+		postingList(tokens, parser, ireader, isearcher);
+		System.out.println();
 		System.out.println("Documents that contain 'sunny' and 'exciting':");
 		String query = "sunny exciting";
 		termIntersection(query, parser, ireader, isearcher);
-		System.out.println();
-		System.out.println("Postings List:");
-		postingList(tokens, parser, ireader, isearcher);
 		ireader.close();
 		directory.close();
 	}
@@ -183,7 +182,7 @@ public class P02 {
 		//Iterate over words from here
 		TopDocs topDocss = isearcher.search(query, 1000);
 		ScoreDoc[] hits = topDocss.scoreDocs;
-		System.out.println(hits.length);
+		System.out.println(hits.length+" documents have both tokens" );
 		List<String> wordss = Arrays.asList(word.split(" "));
 
 		for (int i = 0; i < hits.length; i++) {

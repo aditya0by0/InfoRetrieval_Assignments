@@ -58,12 +58,12 @@ public class P02 {
 		QueryParser parser = new QueryParser("contents", analyzer);
 		tokens = getTokens(ireader);
 		//Print posting list for each token
+		System.out.println("Postings List:");
+		postingList(tokens, parser, ireader, isearcher);
+		System.out.println();
 		System.out.println("Documents that contain 'sunny' and 'exciting':");
 		String query = "sunny exciting";
 		termIntersection(query, parser, ireader, isearcher);
-		System.out.println();
-		System.out.println("Postings List:");
-		postingList(tokens, parser, ireader, isearcher);
 		ireader.close();
 		directory.close();
 	}

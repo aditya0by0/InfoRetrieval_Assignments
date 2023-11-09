@@ -60,8 +60,8 @@ public class P02 {
 		//Print posting list for each token
 		System.out.println("Documents that contain 'sunny' and 'exciting':");
 		String query = "sunny exciting";
-		termIntersection(query, parser, ireader, isearcher);
 		System.out.println();
+		termIntersection(query, parser, ireader, isearcher);
 		System.out.println("Postings List:");
 		postingList(tokens, parser, ireader, isearcher);
 		ireader.close();
