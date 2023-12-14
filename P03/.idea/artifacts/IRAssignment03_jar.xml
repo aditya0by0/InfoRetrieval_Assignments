@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="IRAssignment03:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/IRAssignment03_jar</output-path>
+    <root id="archive" name="IRAssignment03.jar">
+      <element id="module-output" name="IRAssignment03" />
+      <element id="extracted-dir" path="C:/dev/vendor/lucene-7.4.0/analysis/common/lucene-analyzers-common-7.4.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="C:/dev/vendor/lucene-7.4.0/demo/lucene-demo-7.4.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="C:/dev/vendor/lucene-7.4.0/core/lucene-core-7.4.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="C:/dev/vendor/lucene-7.4.0/queryparser/lucene-queryparser-7.4.0.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

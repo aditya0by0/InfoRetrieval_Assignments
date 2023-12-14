@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="lucene-demo-7.4.0">
+    <CLASSES>
+      <root url="jar://C:/dev/vendor/lucene-7.4.0/demo/lucene-demo-7.4.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
